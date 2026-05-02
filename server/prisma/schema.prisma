@@ -1,0 +1,53 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model hospital_resources {
+  hospital_id        Int?
+  beds               Int?
+  icu_beds           Int?
+  ventilators        Int?
+  cardiologists      Int?
+  stroke_doctors     Int?
+  operation_theatres Int?
+  id                 Int        @id @default(autoincrement())
+  hospitals          hospitals? @relation(fields: [hospital_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+}
+
+model hospitals {
+  id                 Int                       @id @default(autoincrement())
+  name               String?
+  city               String?
+  latitude           Float?
+  longitude          Float?
+  geom               Unsupported("geography")?
+  hospital_resources hospital_resources[]
+
+  @@index([geom], map: "idx_hospitals_geom", type: Gist)
+}
+
+model appointments {
+  id         Int      @id @default(autoincrement())
+  hospitalId Int
+  service    String
+  status     String   @default("pending")
+  reason     String?
+  createdAt  DateTime @default(now())
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model spatial_ref_sys {
+  srid      Int     @id
+  auth_name String? @db.VarChar(256)
+  auth_srid Int?
+  srtext    String? @db.VarChar(2048)
+  proj4text String? @db.VarChar(2048)
+}
